@@ -1,52 +1,64 @@
-use rust_gpiozero::OutputDevice;
+use std::{thread, sync::{mpsc, Mutex},};
+use actix_web::{post, web::{Json, self}, App, HttpServer, Responder, Result};
+use serde::{Serialize, Deserialize};
+mod plan_generator;
 
-fn main() {
-    let mut ser  =  OutputDevice::new(4);
-    let mut rsk  =  OutputDevice::new(3);
-    let mut sck  =  OutputDevice::new(2);
-    let mut ch1  = OutputDevice::new(26);
-    let mut ch2  = OutputDevice::new(19);
-    let mut ch3  = OutputDevice::new(13);
-    let mut ch4  =  OutputDevice::new(6);
-
-    
-    let stdin = std::io::stdin();
-    
-    loop {
-        println!("1\t2\t3\t4\tRSK\tSER\tSCK");
-        println!("{}\t{}\t{}\t{}\t{}\t{}\t{}", ch1.value(), ch2.value(), ch3.value(), ch4.value(), rsk.value(), ser.value(), sck.value());
-        
-        let mut input = String::new();
-        match stdin.read_line(&mut input){
-            Ok(..) => {}
-            Err(..) => {break;}
-        }
-        let command = input.trim();
-        if command == "1"{
-            ch1.toggle();
-        }
-        else if command == "2"{
-            ch2.toggle();
-        }
-        else if command == "3"{
-            ch3.toggle();
-        }
-        else if command == "4"{
-            ch4.toggle();
-        }
-        else if command == "r"{
-            rsk.toggle();
-        }
-        else if command == "ser"{
-            ser.toggle();
-        }
-        else if command == "sck"{
-            sck.toggle();
-        }
-        else if command == "exit"{
-            break;
-        }
-    }
+#[derive(Serialize)]
+struct ResponseJSON {
+    message : String,
 }
 
-    
+#[allow(non_camel_case_types)]
+#[derive(Deserialize)]
+enum RequestJSON {
+    leds_on(Vec<u8>),
+    leds_off(Vec<u8>),
+    all_leds_on(bool),
+    all_leds_off(bool),
+    leds_blink(Vec<u8>),
+}
+
+#[post("/api/led_control")]
+async fn led_control(body: Json<RequestJSON>, send_channel: web::Data<mpsc::Sender<plan_generator::Message>>) -> Result<impl Responder> {
+    let body = body.into_inner();
+    match body {
+        RequestJSON::leds_on(leds) => {
+            println!("leds_on {:?}", leds);
+        }
+        RequestJSON::leds_off(leds) => {
+            println!("leds_off {:?}", leds);
+        }
+        RequestJSON::all_leds_on(state) => {
+            println!("all_leds_on {state}");
+        }
+        RequestJSON::all_leds_off(state) => {
+            println!("all_leds_off {state}");
+        }
+        RequestJSON::leds_blink(leds) => {
+            println!("leds_blink {:?}", leds);
+        }
+    }
+    Ok(Json(ResponseJSON { message : "Success!".to_string() }))
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+
+    HttpServer::new(|| {
+        App::new()
+            .app_data(web::Data::new(set_up_plan_generator()))
+            .service(led_control)
+    })
+    .bind(("localhost", 5000))?
+    .run()
+    .await
+}    
+
+
+fn set_up_plan_generator() -> mpsc::Sender<plan_generator::Message> {
+    let (send_end, receive_end) = mpsc::channel();
+    thread::spawn(move || {
+        plan_generator::start(receive_end);
+    });
+    send_end
+}

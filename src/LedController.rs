@@ -23,23 +23,4 @@ impl LedController {
 
         }
     }
-    fn turn_all_on(&self){
-        
-    }
-
-    fn turn_all_off(&self){
-
-    }
-
-    fn turn_on(&self, row: u32, col: u32){
-
-    }
-
-    fn turn_off(&self, row: u32, col: u32){
-        
-    }
-
-    fn toggle(&self, row: u32, col: u32){
-        
-    }
 }
