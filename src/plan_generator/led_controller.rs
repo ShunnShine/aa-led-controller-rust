@@ -1,5 +1,6 @@
 use std::thread;
 use rust_gpiozero::OutputDevice;
+
 pub struct LedController{
     
 
@@ -23,4 +24,8 @@ impl LedController {
 
         }
     }
+}
+
+pub fn start(reciving_channel: Receiver<Plan>) {
+
 }
