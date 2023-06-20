@@ -1,5 +1,5 @@
 mod plan_generator;
-use std::{thread, sync::{mpsc},};
+use std::{thread, sync::mpsc,};
 use actix_web::{post, web::{Json, self}, App, HttpServer, Responder, Result};
 use serde::{Serialize, Deserialize};
 
@@ -49,7 +49,6 @@ async fn led_control(body: Json<RequestJSON>, send_channel: web::Data<mpsc::Send
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     HttpServer::new(|| {
         App::new()
             .app_data(web::Data::new(set_up_plan_generator()))
