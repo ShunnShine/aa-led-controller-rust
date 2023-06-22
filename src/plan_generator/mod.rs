@@ -1,23 +1,25 @@
 mod led_controller;
 mod plan;
+use std::sync::mpsc;
 use std::{sync::mpsc::Receiver, thread};
 use plan::Plan;
+use plan::NUMBER_OF_LEDS;
 
 pub enum Message {
-    LedsOn(Vec<u8>),
-    LedsOff(Vec<u8>),
+    LedsOn(Vec<usize>),
+    LedsOff(Vec<usize>),
     AllLedsOn,
     AllLedsOff,
-    LedsBlink(Vec<u8>),
+    LedsBlink(Vec<usize>),
 }
 
-const NUMBER_OF_LEDS: u8 = 4 * 32;
+
 
 pub fn start(receive_channel: Receiver<Message>) -> () {
     let led_controller_sender = set_up_led_controller();
 
-    let mut new_plan;
     for message in receive_channel {
+        let mut new_plan = Plan::new();
         match message {
             Message::LedsOn(leds) => {
                 for led in leds {
@@ -34,13 +36,13 @@ pub fn start(receive_channel: Receiver<Message>) -> () {
                 }
             }
             Message::AllLedsOn => {
-                new_plan.allOn();
+                new_plan.all_on();
             }
             Message::AllLedsOff => {
-                new_plan.allOff();
+                new_plan.all_off();
             }
             Message::LedsBlink(leds) => {
-                new_plan.allOff();
+                new_plan.all_off();
                 for led in leds {
                     if led < NUMBER_OF_LEDS {
                         new_plan.add(led);
@@ -57,7 +59,7 @@ pub fn start(receive_channel: Receiver<Message>) -> () {
     panic!("[Error] Lost all sending channels in Plan Generator.")
 }
 
-fn set_up_led_controller() -> mpsc::Sender<> {
+fn set_up_led_controller() -> mpsc::Sender<Plan> {
     let (send_end, receive_end) = mpsc::channel();
     thread::spawn(move || {
         led_controller::start(receive_end, );
