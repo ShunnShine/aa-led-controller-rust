@@ -12,11 +12,11 @@ struct ResponseJSON {
 #[allow(non_camel_case_types)]
 #[derive(Deserialize)]
 enum RequestJSON {
-    leds_on(Vec<u8>),
-    leds_off(Vec<u8>),
+    leds_on(Vec<usize>),
+    leds_off(Vec<usize>),
     all_leds_on(bool),
     all_leds_off(bool),
-    leds_blink(Vec<u8>),
+    leds_blink(Vec<usize>),
 }
 
 #[post("/api/led_control")]
