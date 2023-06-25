@@ -12,6 +12,7 @@ type ColumnArray = [Column; NUMBER_OF_COLUMNS];
 const COLUMN_ALL_ON: Column = Column::On{leds: [true; NUMBER_OF_ROWS], num_leds_on: NUMBER_OF_ROWS};
 const ALL_COLUMNS_ON: ColumnArray = [COLUMN_ALL_ON; NUMBER_OF_COLUMNS];
 
+#[derive(Copy, Clone)]
 pub enum Plan {
     AllOff,
     OneColumn{column: Column, column_index: usize},
@@ -31,8 +32,8 @@ impl Plan {
             println!("[Debug] Invalid led number.");
             return;
         }
-        let row_index = led_number / NUMBER_OF_COLUMNS;
-        let column_index = led_number % NUMBER_OF_COLUMNS;
+        let row_index = led_number % NUMBER_OF_ROWS;
+        let column_index = led_number / NUMBER_OF_ROWS; 
         match self {
             Plan::AllOff => {
                 let mut new_column = [false; NUMBER_OF_ROWS];
@@ -84,8 +85,8 @@ impl Plan {
             println!("[Debug] Invalid led number.");
             return;
         }
-        let row_index = led_number / NUMBER_OF_COLUMNS;
-        let column_index = led_number % NUMBER_OF_COLUMNS;
+        let row_index = led_number % NUMBER_OF_ROWS;
+        let column_index = led_number / NUMBER_OF_ROWS;
         match self {
             Plan::MultipleColumns{ref mut columns, ref mut num_columns_on } => {
                 if let Column::On{ ref mut leds, ref mut num_leds_on } = columns[column_index] {

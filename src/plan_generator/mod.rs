@@ -17,9 +17,9 @@ pub enum Message {
 
 pub fn start(receive_channel: Receiver<Message>) -> () {
     let led_controller_sender = set_up_led_controller();
+    let mut new_plan = Plan::AllOff;
 
     for message in receive_channel {
-        let mut new_plan = Plan::AllOff;
         match message {
             Message::LedsOn(leds) => {
                 for led in leds {
@@ -51,7 +51,7 @@ pub fn start(receive_channel: Receiver<Message>) -> () {
                 todo!();
             }
         };
-        match led_controller_sender.send(new_plan) {
+        match led_controller_sender.send(new_plan.clone()) {
             Err(_e) => { panic!("[Error] Unable to send new plan to LED Controller.") }
             _ => {}
         };

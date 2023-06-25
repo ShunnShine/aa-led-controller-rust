@@ -1,4 +1,4 @@
-use std::sync::mpsc::{Receiver, self};
+use std::{sync::mpsc::{Receiver, self}, time::Duration};
 use rust_gpiozero::OutputDevice;
 use super::plan::{Plan, Column};
 
@@ -34,13 +34,14 @@ impl LedController {
         self.sck.off();
     }
     fn use_buffer(&mut self) {
-        self.rsk.on();
         self.rsk.off();
+        self.rsk.on();
     }
 }
 
 pub fn start(receiving_channel: Receiver<Plan>) {
     let mut controller = LedController::new();
+    controller.turn_all_off();
     let mut plan = Plan::AllOff;
     loop {
         plan = {
@@ -65,7 +66,7 @@ pub fn start(receiving_channel: Receiver<Plan>) {
             Plan::AllOff => {
                 controller.turn_all_off();
             },
-            Plan::OneColumn{column, column_index} => {
+            Plan::OneColumn{ref column, column_index} => {
                 match column { 
                     Column::Off => { panic!("[Error] Off Column found in OneColumn Plan."); },
                     Column::On{ref leds, num_leds_on:_} => {
@@ -73,12 +74,14 @@ pub fn start(receiving_channel: Receiver<Plan>) {
                     }
                 }
             },
-            Plan::MultipleColumns{columns, num_columns_on:_}=> {
+            Plan::MultipleColumns{ref columns, num_columns_on:_}=> {
                 for (i, column) in columns.iter().enumerate() {
                     match column {
                         Column::Off => {},
                         Column::On{ref leds, num_leds_on:_} => {
                             turn_on_channel(& mut controller, i, leds);
+                            std::thread::sleep(Duration::from_millis(4));
+                            controller.channels[i].off();
                         }
                     }
                 }
@@ -89,7 +92,7 @@ pub fn start(receiving_channel: Receiver<Plan>) {
 
 
 fn turn_on_channel(controller: & mut LedController, channel_index: usize, leds: &[bool; 32]) {
-    for led in leds {
+    for led in leds.iter().rev() {
         controller.push_physical_buffer(led);
     }
     controller.use_buffer();
