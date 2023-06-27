@@ -37,6 +37,14 @@ impl LedController {
         self.rsk.off();
         self.rsk.on();
     }
+
+    fn turn_on_channel(&mut self, channel_index: usize, leds: &[bool; 32]) {
+        for led in leds.iter().rev() {
+            self.push_physical_buffer(led);
+        }
+        self.use_buffer();
+        self.channels[channel_index].on();
+    }
 }
 
 pub fn start(receiving_channel: Receiver<Plan>) {
@@ -67,10 +75,11 @@ pub fn start(receiving_channel: Receiver<Plan>) {
                 controller.turn_all_off();
             },
             Plan::OneColumn{ref column, column_index} => {
+                controller.turn_all_off();
                 match column { 
                     Column::Off => { panic!("[Error] Off Column found in OneColumn Plan."); },
                     Column::On{ref leds, num_leds_on:_} => {
-                        turn_on_channel(&mut controller, column_index, leds);
+                        controller.turn_on_channel(column_index, leds);
                     }
                 }
             },
@@ -79,7 +88,7 @@ pub fn start(receiving_channel: Receiver<Plan>) {
                     match column {
                         Column::Off => {},
                         Column::On{ref leds, num_leds_on:_} => {
-                            turn_on_channel(& mut controller, i, leds);
+                            controller.turn_on_channel(i, leds);
                             std::thread::sleep(Duration::from_millis(4));
                             controller.channels[i].off();
                         }
@@ -88,13 +97,4 @@ pub fn start(receiving_channel: Receiver<Plan>) {
             }
         }
     }
-}
-
-
-fn turn_on_channel(controller: & mut LedController, channel_index: usize, leds: &[bool; 32]) {
-    for led in leds.iter().rev() {
-        controller.push_physical_buffer(led);
-    }
-    controller.use_buffer();
-    controller.channels[channel_index].on();
 }
