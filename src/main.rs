@@ -1,5 +1,6 @@
 mod plan_generator;
 use std::{thread, sync::mpsc,};
+use actix_cors::Cors;
 use actix_web::{post, web::{Json, self}, App, HttpServer, Responder, Result};
 use serde::{Serialize, Deserialize};
 
@@ -50,10 +51,14 @@ async fn led_control(body: Json<RequestJSON>, send_channel: web::Data<mpsc::Send
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let send_channel = set_up_plan_generator();
+
     HttpServer::new(move || {
+        let cors = Cors::permissive();
+
         App::new()
             .app_data(web::Data::new(send_channel.clone()))
             .service(led_control)
+            .wrap(cors)
     })
     .bind(("0.0.0.0", 5000))?
     .run()
